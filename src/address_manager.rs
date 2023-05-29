@@ -7,14 +7,14 @@ use std::fmt;
 
 
 pub struct KeyBundle {
-    pub public_address: String,
+    pub public_address_no_0x: String,
     pub mnemonic: String,
     pub private_key: String,
 }
 impl KeyBundle {
     pub fn new(mnemonic: String, private_key: String, public_address: String) -> Self {
         KeyBundle {
-            public_address,
+            public_address_no_0x: public_address,
             mnemonic,
             private_key,
         }
@@ -24,17 +24,15 @@ impl KeyBundle {
 impl fmt::Debug for KeyBundle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("KeyBundle")
-            .field("public_address", &self.public_address)
-            .field("mnemonic", &self.mnemonic)
-            .field("private_key", &self.private_key)
+            .field("public_address", &self.public_address_no_0x)
             .finish()
     }
 }
 
 impl fmt::Display for KeyBundle {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Public Address: {}, Mnemonic: {}, Private Key: {}", 
-            self.public_address, self.mnemonic, self.private_key)
+        write!(f, "KeyBundle(address:{})", 
+            self.public_address_no_0x)
     }
 }
 
@@ -69,9 +67,11 @@ pub fn create_eth_address(mnemonic: &str) -> (String, String) {
 
     // Convert to hex string
     let address_hex = format!("0x{}", hex::encode(address));
+    // Convert to hex string
+    let address_no_0x = format!("{}", hex::encode(address));
 
     // Convert private key to hex string
     let private_key_hex = hex::encode(ext_priv_key.secret());
 
-    (private_key_hex, address_hex)
+    (private_key_hex, address_no_0x)
 }

@@ -1,3 +1,5 @@
+#[warn(unused_imports)]
+
 use bip39::{Mnemonic, Language, MnemonicType, Seed};
 use tiny_hderive::bip32::ExtendedPrivKey;
 use secp256k1::{Secp256k1, SecretKey, PublicKey};
@@ -66,7 +68,7 @@ pub fn create_eth_address(mnemonic: &str) -> (String, String) {
     let address = &result.as_slice()[12..];
 
     // Convert to hex string
-    let address_hex = format!("0x{}", hex::encode(address));
+    // let address_hex = format!("0x{}", hex::encode(address));
     // Convert to hex string
     let address_no_0x = format!("{}", hex::encode(address));
 

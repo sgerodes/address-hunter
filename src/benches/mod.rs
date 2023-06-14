@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion, black_box};
-use crate::hunter::{ContainsConsecutiveCharsRule, ContainsConsecutiveCharsRegexRule, ContainsConsecutiveCharsCounterRule, Rule};
+use crate::hunter::{ContainsConsecutiveCharsWindowRule, ContainsConsecutiveCharsRegexRule, ContainsConsecutiveCharsCounterRule, Rule};
 
 #[allow(dead_code)]
 fn benchmark_rule(rule: &impl Rule, input: &str, criterion: &mut Criterion, name: &str) {
@@ -15,7 +15,7 @@ fn counter_rule_benchmark(c: &mut Criterion) {
 }
 #[allow(dead_code)]
 fn window_rule_benchmark(c: &mut Criterion) {
-    let window_rule = ContainsConsecutiveCharsRule::new(3);
+    let window_rule = ContainsConsecutiveCharsWindowRule::new(3);
     benchmark_rule(&window_rule, "Test string", c, "Window rule");
 }
 #[allow(dead_code)]

@@ -1,25 +1,68 @@
-use crate::address_manager::KeyBundle;
-//use regex::Regex;
 use fancy_regex::Regex;
+use lazy_static::lazy_static;
+
 
 pub trait Rule {
-    fn apply(&self, key_bundle: &String) -> bool;
+    fn apply(&self, public_address_no_0x: &String) -> bool;
 }
 
-// pub struct MetamaskStartEndRule;
+pub struct MetamaskStartEndRule;
 
-// impl Rule for MetamaskStartEndRule {
-//     fn apply(&self, key_bundle: &KeyBundle) -> bool {
-//         // implement your logic here, for example
-//         false
-//     }
-// }
+impl Rule for MetamaskStartEndRule {
+    fn apply(&self, public_address_no_0x: &String) -> bool {
+        // starts with 3, ends with 4 same
+        let starting_count:usize = 3;
+        let ending_count:usize = 4;
+        let bytes = public_address_no_0x.as_bytes();
 
-pub struct ContainsConsecutiveCharsRule {
+        for s in 1..starting_count {
+            if bytes[s] != bytes[0] {
+                return false;
+            }
+        }
+        for f in 1..ending_count {
+            if bytes[bytes.len() - f] != bytes[bytes.len() - 1] {
+                return false;
+            }
+        }
+    
+        true
+    }
+}
+
+impl MetamaskStartEndRule {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+pub struct StartRule<'a> {
+    starting_words: &'a [&'a str]
+}
+
+impl<'a> StartRule<'a> {
+    pub fn new(starting_words: &'a [&'a str]) -> Self {
+        Self {
+            starting_words
+        }
+    }
+}
+
+impl<'a> Rule for StartRule<'a> {
+    fn apply(&self, public_address_no_0x: &String) -> bool {
+        for &word in self.starting_words {
+            if public_address_no_0x.starts_with(word) {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+pub struct ContainsConsecutiveCharsWindowRule {
     consecutive_chars_amount: usize,
 }
 
-impl ContainsConsecutiveCharsRule {
+impl ContainsConsecutiveCharsWindowRule {
     pub fn new(consecutive_chars_amount: usize) -> Self {
         Self {
             consecutive_chars_amount,
@@ -27,7 +70,7 @@ impl ContainsConsecutiveCharsRule {
     }
 }
 
-impl Rule for ContainsConsecutiveCharsRule {
+impl Rule for ContainsConsecutiveCharsWindowRule {
     fn apply(&self, public_address_no_0x: &String) -> bool {
         public_address_no_0x.as_bytes()
             .windows(self.consecutive_chars_amount)
@@ -63,7 +106,6 @@ impl Rule for ContainsConsecutiveCharsRegexRule {
     }
 }
 
-
 pub struct ContainsConsecutiveCharsCounterRule {
     consecutive_chars_amount: usize,
 }
@@ -95,35 +137,110 @@ impl Rule for ContainsConsecutiveCharsCounterRule {
     }
 }
 
-// pub fn is_interesting(rules: Vec<Box<dyn Rule>>, key_bundle: KeyBundle) -> bool {
-//     for rule in rules {
-//         if rule.apply(&key_bundle) {
-//             return true;
-//         }
-//     }
-//     false
-// }
-
-// Usage
-fn main() {
-    // let bundle = KeyBundle::new(); // You would need to get or create a KeyBundle somehow
-    // let rules: Vec<Box<dyn Rule>> = vec![
-    //     Box::new(MetamaskStartEndRule),
-    //     Box::new(ContainsConsecutiveCharsRule),
-    //     // add more rules as needed
-    // ];
-    // let result = is_interesting(rules, bundle);
-    // println!("Result: {}", result);
+pub struct StartsConsecutiveCharsCounterRule {
+    consecutive_chars_amount: usize,
 }
 
+impl StartsConsecutiveCharsCounterRule {
+    pub fn new(consecutive_chars_amount: usize) -> Self {
+        Self {
+            consecutive_chars_amount
+        }
+    }
+}
+
+impl Rule for StartsConsecutiveCharsCounterRule {
+    fn apply(&self, public_address_no_0x: &String) -> bool {
+        let bytes = public_address_no_0x.as_bytes();
+        for s in 1..self.consecutive_chars_amount {
+            if bytes[s] != bytes[0] {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+
+// static metamask_rule: MetamaskStartEndRule = MetamaskStartEndRule::new();
+// static consecutive_chars_rule: ContainsConsecutiveCharsCounterRule = ContainsConsecutiveCharsCounterRule::new(7);
+// static start_rule: StartRule = StartRule::new(&["decaff", "facade", "c0ffee", "dec0de", "01234567", "12345678", "abcdef", "fedcba", "98765432"]);
+
+lazy_static! {
+    pub static ref METAMASK_RULE: MetamaskStartEndRule = MetamaskStartEndRule::new();
+    pub static ref CONSECUTIVE_CHARS_RULE: ContainsConsecutiveCharsCounterRule = ContainsConsecutiveCharsCounterRule::new(9);
+    pub static ref START_RULE: StartRule<'static> = StartRule::new(&["decaff", "facade", "c0ffee", "dec0de", "01234567", "12345678", "abcdef", "fedcba", "98765432"]);
+    pub static ref START_CONSECUTIVE_CHARS_RULE: StartsConsecutiveCharsCounterRule = StartsConsecutiveCharsCounterRule::new(7);
+}
+
+pub fn does_address_meet_criteria(public_address_no_0x: &String) -> bool {
+    if START_CONSECUTIVE_CHARS_RULE.apply(public_address_no_0x) {
+        print!("Start consecutive chars rule match found: {}\n", public_address_no_0x);
+        return true;
+    }
+    if METAMASK_RULE.apply(public_address_no_0x) {
+        print!("Metamask rule match found: {}\n", public_address_no_0x);
+        return true;
+    }
+    if CONSECUTIVE_CHARS_RULE.apply(public_address_no_0x) { 
+        print!("Consecutive chars rule match found: {}\n", public_address_no_0x);
+        return true;
+    }
+    if START_RULE.apply(public_address_no_0x) {
+        print!("Start rule match found: {}\n", public_address_no_0x);
+        return true;
+    }
+    false
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Instant;
+
+    const PERFORMANCE_TEST_ITERATIONS: i32 = 1000;
+
+    fn iter_test(should_pass: &[&str], should_fail: &[&str], rule: &dyn Rule) {
+        for sp in should_pass.iter() {
+            assert!(rule.apply(&sp.to_string()));
+        }
+        for sf in should_fail.iter() {
+            assert!(!rule.apply(&sf.to_string()));
+        }
+    }
+
+    #[test]
+    fn count_execution_time_of_consecutive_rules_test() {
+        let rules: Vec<Box<dyn Rule>> = vec![
+            Box::new(ContainsConsecutiveCharsCounterRule::new(7)),
+            Box::new(ContainsConsecutiveCharsRegexRule::new(7)),
+            Box::new(ContainsConsecutiveCharsWindowRule::new(7)),
+        ];
+    
+        let test_cases = [
+            "55555552af5e170c3ec77a1233883c8a7e8a827f",
+            "12545552af5e170c3ec77a1233883c8a75555555",
+            "12545552af5e155555557a1233883c8a75444455",
+            "55555532af5e170c3ec77a1233883c8a7e8a827f",
+            "12545552af5e170c3ec77a1233883c8a75555551",
+            "12545552af5e155555537a1233883c8a75444455",
+        ];
+    
+        for (i, rule) in rules.iter().enumerate() {
+            let start = Instant::now();
+            for _num in 0..PERFORMANCE_TEST_ITERATIONS {
+                for case in test_cases.iter() {
+                    rule.apply(&case.to_string());
+                }
+            }
+            let duration = start.elapsed();
+            println!("Time elapsed in Rule {}: {:?}", i+1, duration);
+        }
+    }
 
     #[test]
     fn consecutive_rule_test() {
-        let rule = ContainsConsecutiveCharsRule::new(7);
+        let rule = ContainsConsecutiveCharsWindowRule::new(7);
 
         let should_pass = [
             "55555552af5e170c3ec77a1233883c8a7e8a827f",
@@ -136,13 +253,7 @@ mod tests {
             "12545552af5e170c3ec77a1233883c8a75555551",
             "12545552af5e155555537a1233883c8a75444455",
         ];
-        
-        for sp in should_pass.iter() {
-            assert!(rule.apply(&sp.to_string()));
-        }
-        for sf in should_fail.iter() {
-            assert!(!rule.apply(&sf.to_string()));
-        }
+        iter_test(&should_pass, &should_fail, &rule);
     }
 
     #[test]
@@ -160,14 +271,7 @@ mod tests {
             "12545552af5e170c3ec77a1233883c8a75555551",
             "12545552af5e155555537a1233883c8a75444455",
         ];
-        
-        for sp in should_pass.iter() {
-            assert!(rule.apply(&sp.to_string()));
-        }
-        for sf in should_fail.iter() {
-            print!("{} ", sf);
-            assert!(!rule.apply(&sf.to_string()));
-        }
+        iter_test(&should_pass, &should_fail, &rule);
     }
 
     #[test]
@@ -185,13 +289,45 @@ mod tests {
             "12545552af5e170c3ec77a1233883c8a75555551",
             "12545552af5e155555537a1233883c8a75444455",
         ];
-        
-        for sp in should_pass.iter() {
-            assert!(rule.apply(&sp.to_string()));
-        }
-        for sf in should_fail.iter() {
-            print!("{} ", sf);
-            assert!(!rule.apply(&sf.to_string()));
-        }
+        iter_test(&should_pass, &should_fail, &rule);
     }
+
+    #[test]
+    fn metamask_rule_test() {
+        let rule = MetamaskStartEndRule;
+
+        let should_pass = [
+            "55555312af5e170c3ec77a1233883c8a7e444444",
+            "11145552af5e170c3ec77a1233883c8a75555555",
+            "22222552af5e155555557a1233883c8a75445555",
+        ];
+
+        let should_fail = [
+            "55555532af5e170c3ec77a1233883c8a7e8a827f",
+            "44445552af5e170c3ec77a1233883c8a75555551",
+            "12545552af5e155555537a1233883c8a75444444",
+            "33545552af5e155555537a1233883c8a75444444",
+        ];
+        iter_test(&should_pass, &should_fail, &rule);
+    }
+
+    #[test]
+    fn start_rule_test() {
+        let rule = StartRule::new(&["decaff", "facade", "c0ffee", "dec0de", "01234567", "12345678", "abcdef", "fedcba", "98765432"]);
+        let should_pass = [
+            "decaff12af5e170c3ec77a1233883c8a7e444444",
+            "c0ffee52af5e170c3ec77a1233883c8a75555555",
+            "01234567af5e155555557a1233883c8a75445555",
+        ];
+
+        let should_fail = [
+            "55555532af5e170c3ec77a1233883c8a7e8a827f",
+            "44445552af5e170c3ec77a1233883c8a75555551",
+            "12545552af5e155555537a1233883c8a75444444",
+            "33545552af5e155555537a1233883c8a75444444",
+        ];
+        
+        iter_test(&should_pass, &should_fail, &rule);
+    }
+
 }

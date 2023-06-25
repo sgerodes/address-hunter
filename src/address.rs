@@ -1,0 +1,283 @@
+pub mod eth_wallet {
+
+    use ethers::core::rand::thread_rng;
+    use tiny_keccak::keccak256;
+    use web3::types::Address;
+
+    use secp256k1::{PublicKey, Secp256k1, SecretKey};
+
+    #[derive(Debug)]
+    pub struct Wallet {
+        pub secret_key: String,
+        pub public_key: String,
+        pub address: String,
+    }
+
+    impl Wallet {
+        pub fn new(secret_key: &SecretKey, public_key: &PublicKey) -> Self {
+            let addr: Address = public_key_address(&public_key);
+            Wallet {
+                secret_key: hex::encode(&secret_key.secret_bytes()),
+                public_key: public_key.to_string(),
+                address: hex::encode(addr),
+            }
+        }
+    }
+
+    pub fn generate_random_wallet() -> Wallet {
+        let secp = Secp256k1::new();
+        let (secret_key, public_key) = secp.generate_keypair(&mut thread_rng());
+        Wallet::new(&secret_key, &public_key)
+    }
+
+    pub fn public_key_address(public_key: &PublicKey) -> Address {
+        let public_key = public_key.serialize_uncompressed();
+        debug_assert_eq!(public_key[0], 0x04);
+        let hash = keccak256(&public_key[1..]);
+        Address::from_slice(&hash[12..])
+    }
+
+   
+
+}
+
+pub mod eth_wallet_simple {
+    // https://ethereum.stackexchange.com/questions/3542/how-are-ethereum-addresses-generated
+    
+    use rand::Rng;
+    use num_bigint::{BigUint, RandBigInt, RandomBits};
+    use num_traits::{Zero, One};
+    use once_cell::sync::Lazy;
+    use lazy_static::lazy_static;
+
+    use ethers::core::rand::thread_rng;
+    use tiny_keccak::keccak256;
+    use web3::types::Address;
+
+    use secp256k1::{PublicKey, Secp256k1, SecretKey};
+
+    pub fn random_biguint_in_hex64_range() -> BigUint {
+        let mut rng = rand::thread_rng();
+        rng.sample(RandomBits::new(256))
+    }
+    
+    #[derive(Debug)]
+    pub struct Wallet {
+        pub secret_key: String,
+        pub public_key: String,
+        pub address: String,
+    }
+
+    impl Wallet {
+        pub fn new(secret_key: &SecretKey, public_key: &PublicKey) -> Self {
+            let addr: Address = public_key_address(&public_key);
+            Wallet {
+                secret_key: hex::encode(&secret_key.secret_bytes()),
+                public_key: public_key.to_string(),
+                address: hex::encode(addr),
+            }
+        }
+    }
+
+    pub struct Generator {
+        pub current_biguint: BigUint,
+    }
+
+    impl Generator {
+        pub fn new() -> Generator {
+            let mut gen = Generator {
+                current_biguint: BigUint::one(),
+            };
+            gen.randomize();
+            gen
+        }
+    
+        pub fn increment(&mut self) {
+            self.current_biguint += BigUint::one();
+        }
+    
+        pub fn randomize(&mut self) {
+            let mut rng = rand::thread_rng();
+            self.current_biguint = rng.gen_biguint(128);
+        }
+    }
+
+    pub fn parse_hex64_padded(bigint: BigUint) -> String {
+        format!("{:064x}", bigint)
+    }
+
+    pub fn generate_private_key(biguint: BigUint) -> String {
+        parse_hex64_padded(biguint)
+    }
+
+    pub fn generate_ecdsa_key_pair_from_private_key(biguint: BigUint) -> Result<Wallet, Box<dyn std::error::Error>> {
+        let private_key_hex = generate_private_key(biguint);
+        let secret_key = SecretKey::from_slice(&hex::decode(private_key_hex)?)?;
+
+        let secp = Secp256k1::new();
+        let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+        Ok(Wallet::new(&secret_key, &public_key))
+    }
+    
+    pub fn public_key_address(public_key: &PublicKey) -> Address {
+        let public_key = public_key.serialize_uncompressed();
+        debug_assert_eq!(public_key[0], 0x04);
+        let hash = keccak256(&public_key[1..]);
+        Address::from_slice(&hash[12..])
+    }
+}
+
+
+pub mod eth_wallet_simple_u64 {
+    // https://ethereum.stackexchange.com/questions/3542/how-are-ethereum-addresses-generated
+    
+    use rand::Rng;
+    use rand::RngCore;
+    use num_bigint::{BigUint, RandBigInt, RandomBits};
+    use num_traits::{Zero, One};
+    use once_cell::sync::Lazy;
+    use lazy_static::lazy_static;
+
+    use ethers::core::rand::thread_rng;
+    use tiny_keccak::keccak256;
+    use web3::types::Address;
+    use std::sync::Mutex;
+
+    use secp256k1::{PublicKey, Secp256k1, SecretKey};
+    static SECRET_KEY_BYTES: Lazy<Mutex<[u8; 32]>> = Lazy::new(|| {
+        let mut bytes = [0u8; 32];
+        rand::thread_rng().fill_bytes(&mut bytes[0..24]);
+        Mutex::new(bytes)
+    });
+
+
+    #[derive(Debug)]
+    pub struct Wallet {
+        pub secret_key: String,
+        pub public_key: String,
+        pub address: String,
+    }
+
+    impl Wallet {
+        pub fn new(secret_key: &SecretKey, public_key: &PublicKey) -> Self {
+            let addr: Address = public_key_address(&public_key);
+            Wallet {
+                secret_key: hex::encode(&secret_key.secret_bytes()),
+                public_key: public_key.to_string(),
+                address: hex::encode(addr),
+            }
+        }
+    }
+
+    pub fn public_key_address(public_key: &PublicKey) -> Address {
+        let public_key = public_key.serialize_uncompressed();
+        debug_assert_eq!(public_key[0], 0x04);
+        let hash = keccak256(&public_key[1..]);
+        Address::from_slice(&hash[12..])
+    }
+
+    pub struct Generator {
+        pub current_u64: u64,
+    }
+    
+    impl Generator {
+        pub fn new() -> Generator {
+            let mut gen = Generator {
+                current_u64: 1,  // initialized to 1
+            };
+            gen.randomize();
+            gen
+        }
+        
+        pub fn increment(&mut self) {
+            self.current_u64 += 1;
+        }
+        
+        pub fn randomize(&mut self) {
+            let mut rng = rand::thread_rng();
+            self.current_u64 = rng.gen::<u64>();
+        }
+    }
+    pub fn generate_private_key(u64_value: u64) -> String {
+        format!("{:064x}", u64_value)  // padding with zeroes to have 16 hexadecimal digits
+    }
+    
+    pub fn generate_ecdsa_key_pair_from_private_key(u64_value: u64) -> Result<Wallet, Box<dyn std::error::Error>> {
+        //let private_key_hex = generate_private_key(u64_value);
+        {
+            let mut secret_key_bytes = SECRET_KEY_BYTES.lock().unwrap();
+            secret_key_bytes[24..32].copy_from_slice(&u64_value.to_be_bytes());
+        }
+        //let mut secret_key_bytes = [0u8; 32];
+        //secret_key_bytes[24..32].copy_from_slice(&u64_value.to_be_bytes());
+        let secret_key = SecretKey::from_slice(&*SECRET_KEY_BYTES.lock().unwrap())?;
+
+
+        //let secret_key = SecretKey::from_slice(&hex::decode(private_key_hex)?)?;
+    
+        let secp = Secp256k1::new();
+        let public_key = PublicKey::from_secret_key(&secp, &secret_key);
+        Ok(Wallet::new(&secret_key, &public_key))
+    }
+        
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::eth_wallet;
+    use super::eth_wallet_simple;
+    use super::eth_wallet_simple_u64;
+    use std::time::Instant;
+
+    fn g_wallet(n_wallets: i32) {
+        for _ in 0..n_wallets {
+            let _wallet = eth_wallet::generate_random_wallet();
+        }
+    }
+
+    fn s_wallet(n_wallets: i32) { 
+        let mut biguint_generator = eth_wallet_simple::Generator::new();
+        for _ in 0..n_wallets {
+            let _wallet = eth_wallet_simple::generate_ecdsa_key_pair_from_private_key(biguint_generator.current_biguint.clone()).unwrap();
+            biguint_generator.increment();
+        }
+    }
+
+    fn s_64_wallet(n_wallets: i32) { 
+        let mut u64_generator = eth_wallet_simple_u64::Generator::new();
+        for _ in 0..n_wallets {
+            let _wallet = eth_wallet_simple_u64::generate_ecdsa_key_pair_from_private_key(u64_generator.current_u64).unwrap();
+            u64_generator.increment();
+        }
+    }
+
+
+    #[test]
+    fn wallet_generation_speed() {
+        let n_wallets = 10000;
+
+        let to_test = [
+                ("g_wallet", g_wallet as fn(i32)), 
+                ("s_wallet", s_wallet as fn(i32)), 
+                ("s_64_wallet", s_64_wallet as fn(i32))
+            ];
+
+        println!("Generating {} wallets for every function", n_wallets);
+        for (name, func) in to_test.iter() {
+            let start = Instant::now();
+
+            func(n_wallets);
+            //for _ in 0..n_wallets {
+            //}
+
+            let duration = start.elapsed();
+            let duration_in_secs = duration.as_secs_f64();
+            let wallets_per_second = n_wallets as f64 / duration_in_secs;
+
+            println!("{} in {:.2} seconds, {:.2} wallets/second", name, duration_in_secs, wallets_per_second);
+        }
+
+    }
+
+}

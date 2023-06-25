@@ -9,18 +9,23 @@ path = "src/benches/mod.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ethkey = "0.3.1"
+ethers = "2.0.7"
 fancy-regex = "0.11.0"
 hex = "0.4.3"
 lazy_static = "1.4.0"
 libsecp256k1 = "0.7.1"
 rand = "0.8.5"
 regex = "1.8.3"
-secp256k1 = "0.27.0"
 sha3 = "0.10.8"
 tiny-bip39 = "1.0.0"
 tiny-hderive = "0.3.0"
-tiny-secp256k1 = "0.1.1"
+tiny-keccak = { version = "1.4" }
+#tiny-secp256k1 = "0.1.1"
+secp256k1 = { version = "0.27.0", features = ["rand"] }
+web3 = "0.19.0"
+num-bigint = { version = "0.4.3", features = ["rand"] }
+num-traits = "0.2.15"
+once_cell = "1.18.0"
 
 [dev-dependencies]
 criterion = "0.5.1"

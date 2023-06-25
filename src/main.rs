@@ -1,9 +1,10 @@
 #[warn(unused_imports)]
 #[warn(dead_code)]
-use std::time::{Instant, Duration};
+use std::time::Instant;
 
 mod address_manager;
 mod hunter;
+mod address;
 
 fn main() {
     println!("Hunter started!");

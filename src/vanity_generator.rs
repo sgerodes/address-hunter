@@ -20,7 +20,7 @@ impl Rule for MetamaskStartEndRule {
                 return false;
             }
         }
-        for f in 1..ending_count {
+        for f in 1..(ending_count+1) {
             if bytes[bytes.len() - f] != bytes[bytes.len() - 1] {
                 return false;
             }
@@ -158,6 +158,77 @@ impl Rule for StartsConsecutiveCharsCounterRule {
             }
         }
         true
+    }
+}
+
+pub struct CharCounterRule {
+}
+
+use std::collections::HashMap;
+
+impl CharCounterRule {
+    pub fn new() -> Self {
+        Self {
+           
+        }
+    }
+    fn count_chars(&self, s: &str) -> HashMap<char, usize> {
+        let mut map = HashMap::new();
+        for ch in s.chars() {
+            *map.entry(ch).or_insert(0) += 1;
+        }
+        map
+    }
+
+    // Compute a HashMap with each character in the string and its probability of occurrence
+    fn compute_char_probabilities(&self, s: &str) -> HashMap<char, f64> {
+        let mut counts = HashMap::new();
+        let total_chars = s.len() as f64;
+        
+        // Count occurrences of each character
+        for ch in s.chars() {
+            *counts.entry(ch).or_insert(0.0) += 1.0;
+        }
+
+        // Compute probabilities
+        for value in counts.values_mut() {
+            *value /= total_chars;
+        }
+
+        counts
+    }
+
+    // Compute the entropy of the string
+    fn compute_entropy(&self, s: &str) -> f64 {
+        let probabilities = self.compute_char_probabilities(s);
+
+        // Compute entropy
+        probabilities.values().fold(0.0, |acc, &p| {
+            acc - p * p.log2()
+        })
+    }
+
+    // Evaluate the vanity quality of an address: lower entropy means higher vanity quality
+    fn evaluate_vanity_quality(&self, address: &str) -> f64 {
+        -self.compute_entropy(address)
+    }
+    
+}
+
+impl Rule for CharCounterRule {
+    fn apply(&self, public_address_no_0x: &String) -> bool {
+        let score = self.evaluate_vanity_quality(public_address_no_0x);
+        // Here you need to decide what score is considered "high quality"
+        score > some_threshold
+    }
+}
+
+
+impl Rule for CharEntropyRule {
+
+    fn apply(&self, public_address_no_0x: &String) -> bool {
+
+        false
     }
 }
 
@@ -307,6 +378,8 @@ mod tests {
             "44445552af5e170c3ec77a1233883c8a75555551",
             "12545552af5e155555537a1233883c8a75444444",
             "33545552af5e155555537a1233883c8a75444444",
+            "33345552af5e155555537a1233883c8a75231444",
+            "33145552af5e155555537a1233883c8a75234444",
         ];
         iter_test(&should_pass, &should_fail, &rule);
     }

@@ -2,20 +2,23 @@
 #[warn(dead_code)]
 use std::time::Instant;
 
-mod address_manager;
-mod hunter;
 mod address;
+mod vanity_generator;
+
 
 fn main() {
-    println!("Hunter started!");
+
+    println!("Vanity Generaor started!");
     let mut loop_counter = 0;
     let mut total_adresses_searched = 0;
     let mut start = Instant::now();
-    let efficiency_count = 100;
+    let efficiency_count = 1_000_000;
     loop {
         while loop_counter < efficiency_count {
-            let key_bundle = address_manager::create_key_bundle();
-            hunter::does_address_meet_criteria(&key_bundle.public_address_no_0x);
+
+            let wallet = address::eth_wallet::generate_random_wallet();
+            
+            vanity_generator::does_address_meet_criteria(&wallet.address);
             loop_counter += 1;
         }
         total_adresses_searched += efficiency_count;

@@ -1,9 +1,11 @@
 #[warn(unused_imports)]
 #[warn(dead_code)]
 use std::time::Instant;
+use crate::vanity_generator::VanityResult;
 
 mod address;
 mod vanity_generator;
+mod database;
 
 
 fn main() {
@@ -18,7 +20,19 @@ fn main() {
 
             let wallet = address::eth_wallet::generate_random_wallet();
             
-            vanity_generator::does_address_meet_criteria(&wallet.address);
+            let vanity_result: VanityResult = vanity_generator::does_address_meet_criteria(&wallet);
+            if vanity_result.met_criteria {
+                println!("{}: {:?}", vanity_result.wallet.address, vanity_result.matched_rule);
+                let insertion_result = database::database::write_eth_wallet(&vanity_result);
+                match insertion_result {
+                    Ok(_) => {
+                        println!("Wrote to DB {}", vanity_result.wallet.address);
+                    },
+                    Err(e) => {
+                        println!("Error writing to DB: {}", e);
+                    }
+                }
+            }
             loop_counter += 1;
         }
         total_adresses_searched += efficiency_count;

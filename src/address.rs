@@ -7,6 +7,7 @@ pub mod eth_wallet {
     use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
     #[derive(Debug)]
+    #[derive(Clone)]
     pub struct Wallet {
         pub secret_key: String,
         pub public_key: String,

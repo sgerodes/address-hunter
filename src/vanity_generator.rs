@@ -1,3 +1,4 @@
+use crate::address::eth_wallet::Wallet;
 use fancy_regex::Regex;
 use lazy_static::lazy_static;
 
@@ -219,10 +220,12 @@ impl Rule for CharCounterRule {
     fn apply(&self, public_address_no_0x: &String) -> bool {
         let score = self.evaluate_vanity_quality(public_address_no_0x);
         // Here you need to decide what score is considered "high quality"
-        score > some_threshold
+        score > 1000000.0
     }
 }
 
+pub struct CharEntropyRule {
+}
 
 impl Rule for CharEntropyRule {
 
@@ -233,10 +236,6 @@ impl Rule for CharEntropyRule {
 }
 
 
-// static metamask_rule: MetamaskStartEndRule = MetamaskStartEndRule::new();
-// static consecutive_chars_rule: ContainsConsecutiveCharsCounterRule = ContainsConsecutiveCharsCounterRule::new(7);
-// static start_rule: StartRule = StartRule::new(&["decaff", "facade", "c0ffee", "dec0de", "01234567", "12345678", "abcdef", "fedcba", "98765432"]);
-
 lazy_static! {
     pub static ref METAMASK_RULE: MetamaskStartEndRule = MetamaskStartEndRule::new();
     pub static ref CONSECUTIVE_CHARS_RULE: ContainsConsecutiveCharsCounterRule = ContainsConsecutiveCharsCounterRule::new(9);
@@ -244,24 +243,61 @@ lazy_static! {
     pub static ref START_CONSECUTIVE_CHARS_RULE: StartsConsecutiveCharsCounterRule = StartsConsecutiveCharsCounterRule::new(7);
 }
 
-pub fn does_address_meet_criteria(public_address_no_0x: &String) -> bool {
+pub struct VanityResult {
+    pub wallet: Wallet,
+    pub matched_rule: Option<String>,
+    pub met_criteria: bool
+}
+
+pub fn does_address_meet_criteria(wallet: &Wallet) -> VanityResult {
+    let public_address_no_0x = &wallet.address;
+    let mut matched_rule: Option<String> = None;
+    let mut met_criteria = false;
     if START_CONSECUTIVE_CHARS_RULE.apply(public_address_no_0x) {
-        print!("Start consecutive chars rule match found: {}\n", public_address_no_0x);
-        return true;
+        let consecutive_chars = max_consecutive_chars(public_address_no_0x);
+        matched_rule = Some(format!("Start consecutive rule. Consecutive {}", consecutive_chars));
+        met_criteria = true;
     }
     if METAMASK_RULE.apply(public_address_no_0x) {
-        print!("Metamask rule match found: {}\n", public_address_no_0x);
-        return true;
+        matched_rule = Some("Metamask rule".to_string());
+        met_criteria = true;
     }
     if CONSECUTIVE_CHARS_RULE.apply(public_address_no_0x) { 
-        print!("Consecutive chars rule match found: {}\n", public_address_no_0x);
-        return true;
+        let consecutive_chars = max_consecutive_chars(public_address_no_0x);
+        matched_rule = Some(format!("Consecutive rule. Consecutive {}", consecutive_chars));
+        met_criteria = true;
     }
     if START_RULE.apply(public_address_no_0x) {
-        print!("Start rule match found: {}\n", public_address_no_0x);
-        return true;
+        matched_rule = Some("Start word rule".to_string());
+        met_criteria = true;
     }
-    false
+    VanityResult { 
+        wallet: wallet.clone(), 
+        matched_rule, 
+        met_criteria 
+    }
+}
+
+fn max_consecutive_chars(s: &str) -> usize {
+    let mut max_char = ' ';
+    let mut max_count = 0;
+    let mut last_char = ' ';
+    let mut last_count = 0;
+
+    for c in s.chars() {
+        if c == last_char {
+            last_count += 1;
+        } else {
+            last_char = c;
+            last_count = 1;
+        }
+
+        if last_count > max_count {
+            max_char = c;
+            max_count = last_count;
+        }
+    }
+    max_count
 }
 
 #[cfg(test)]

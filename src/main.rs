@@ -29,7 +29,7 @@ fn main() {
 
 
 fn run_vanity(task_id: i32) {
-    println!("Process {}: task_id, Vanity Generaor started!");
+    println!("Process {}: Vanity Generaor started!", task_id);
     let mut loop_counter = 0;
     let mut total_adresses_searched = 0;
     let mut start = Instant::now();

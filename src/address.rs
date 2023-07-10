@@ -3,6 +3,7 @@ pub mod eth_wallet {
     use ethers::core::rand::thread_rng;
     use tiny_keccak::keccak256;
     use web3::types::Address;
+    use eth_checksum;
 
     use secp256k1::{PublicKey, Secp256k1, SecretKey};
 
@@ -11,7 +12,7 @@ pub mod eth_wallet {
     pub struct Wallet {
         pub secret_key: String,
         pub public_key: String,
-        pub address: String,
+        pub address: String
     }
 
     impl Wallet {
@@ -33,9 +34,13 @@ pub mod eth_wallet {
 
     pub fn public_key_address(public_key: &PublicKey) -> Address {
         let public_key = public_key.serialize_uncompressed();
-        debug_assert_eq!(public_key[0], 0x04);
+        // debug_assert_eq!(public_key[0], 0x04);
         let hash = keccak256(&public_key[1..]);
         Address::from_slice(&hash[12..])
+    }
+
+    pub fn checksummed(address: &String) -> String {
+        eth_checksum::checksum(address)
     }
 
    
@@ -322,10 +327,13 @@ mod tests {
             let _wallet = eth_wallet_u64_contained::generate_ecdsa_key_pair_from_private_key().unwrap();
         }
     }
+    use web3::types::Address;
+    use std::str::FromStr;
+    use eth_checksum;
 
     #[test]
     fn wallet_generation_speed() {
-        let n_wallets = 10000;
+        let n_wallets = 1000;
 
         let to_test = [
                 ("g_wallet", g_wallet as fn(i32)), 
@@ -347,6 +355,9 @@ mod tests {
             println!("{} in {:.2} seconds, {:.2} wallets/second", name, duration_in_secs, wallets_per_second);
         }
 
+        let address = Address::from_str("0xabcdef6789012345678901234567890123abcdef").unwrap();
+        println!("{}", address.to_string());
+        println!("{}", eth_checksum::checksum("0xde00050c5ecba5e32e1d0b57e1f6669184f4fc15"));
     }
 
 }

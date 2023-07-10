@@ -1,21 +1,46 @@
 #[warn(unused_imports)]
 #[warn(dead_code)]
 use std::time::Instant;
+use std::env;
 use crate::vanity_generator::VanityResult;
 use rayon::prelude::*;
+use dotenv::dotenv;
 
 mod address;
 mod vanity_generator;
 mod database;
 
-
 fn main() {
+    dotenv().ok();
 
-    println!("Vanity Generaor started!");
+    let process_count = env::var("PROCESS_COUNT")
+    .unwrap_or_else(|_| "1".to_string())
+    .parse()
+    .unwrap_or_else(|_| {
+        println!("Failed to parse PROCESS_COUNT, defaulting to 1");
+        1
+    });
+    println!("Starting {} processes", process_count);
+
+    (0..process_count).into_par_iter().for_each(|task_id| {
+        run_vanity(task_id);
+    });
+}
+
+
+fn run_vanity(task_id: i32) {
+    println!("Process {}: task_id, Vanity Generaor started!");
     let mut loop_counter = 0;
     let mut total_adresses_searched = 0;
     let mut start = Instant::now();
-    let efficiency_count = 100_000;
+    let efficiency_count = env::var("EFFICIENCY_COUNT")
+        .unwrap_or_else(|_| "1000000".to_string())
+        .parse()
+        .unwrap_or_else(|_| {
+            println!("Failed to parse EFFICIENCY_COUNT, defaulting to 1000000");
+            1000000
+        }); 
+    println!("Process {}: Efficiency count set to: {}", task_id, efficiency_count);
 
     let mut wallet_creation_time: i64 = 0;
     let mut vanity_check_time: i64 = 0;
@@ -32,14 +57,14 @@ fn main() {
             let vanity_result: VanityResult = vanity_generator::does_address_meet_criteria(&wallet);
             after_vanity = Instant::now();
             if vanity_result.met_criteria {
-                println!("{}: {:?}", vanity_result.wallet.address, vanity_result.matched_rule);
+                println!("Process {}: {} - {:?}", task_id, vanity_result.wallet.address, vanity_result.matched_rule);
                 let insertion_result = database::database::write_eth_wallet(&vanity_result);
                 match insertion_result {
                     Ok(_) => {
-                        println!("Wrote to DB {}", vanity_result.wallet.address);
+                        println!("Process {}: Wrote to DB {}", task_id, vanity_result.wallet.address);
                     },
                     Err(e) => {
-                        println!("Error writing to DB: {}", e);
+                        println!("Process {}: Error writing to DB: {}", task_id, e);
                     }
                 }
             }
@@ -47,12 +72,12 @@ fn main() {
         }
         wallet_creation_time += after_wallet.duration_since(before_wallet).as_nanos() as i64;
         vanity_check_time += after_vanity.duration_since(after_wallet).as_nanos() as i64;
-        println!("wallet_creation_time / vanity_check_time: {} ", wallet_creation_time as f64 / vanity_check_time as f64);
+        println!("Process {}: wallet_creation_time / vanity_check_time: {} ", task_id, wallet_creation_time as f64 / vanity_check_time as f64);
         wallet_creation_time = 0;
         vanity_check_time = 0;
 
         total_adresses_searched += efficiency_count;
-        println!("Total searched {} addresses. Loops per second: {}", total_adresses_searched, efficiency_count as f64 / start.elapsed().as_secs_f64());
+        println!("Process {}: Total searched {} addresses. Loops per second: {}", task_id, total_adresses_searched, efficiency_count as f64 / start.elapsed().as_secs_f64());
         loop_counter = 0;
         start = Instant::now();
     }

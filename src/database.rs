@@ -5,12 +5,6 @@ pub mod database {
     use std::env;
     use postgres::{Client, NoTls, Error};
 
-    pub struct EthWalletEntity {
-        pub _id: Option<i32>,
-        pub public_address: String,
-        pub private_key: String,
-        pub info: String,
-    }
 
     pub fn create_client() -> Result<Client, Error> {
         dotenv().ok();

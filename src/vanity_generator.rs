@@ -46,6 +46,14 @@ impl<'a> StartRule<'a> {
             starting_words
         }
     }
+    fn matched_word(&self, public_address_no_0x: &String) -> &str {
+        for &word in self.starting_words {
+            if public_address_no_0x.starts_with(word) {
+                return word;
+            }
+        }
+        ""
+    }
 }
 
 impl<'a> Rule for StartRule<'a> {
@@ -259,7 +267,10 @@ pub fn does_address_meet_criteria(wallet: &Wallet) -> VanityResult {
         met_criteria = true;
     }
     if METAMASK_RULE.apply(public_address_no_0x) {
-        matched_rule = Some("Metamask rule".to_string());
+        let consecutive_chars = max_consecutive_chars(public_address_no_0x);
+        let first_char = public_address_no_0x.chars().nth(0).unwrap();
+        let last_char = public_address_no_0x.chars().rev().nth(0).unwrap();
+        matched_rule = Some(format!("Metamask rule {}{}", first_char, last_char));
         met_criteria = true;
     }
     if CONSECUTIVE_CHARS_RULE.apply(public_address_no_0x) { 
@@ -268,7 +279,8 @@ pub fn does_address_meet_criteria(wallet: &Wallet) -> VanityResult {
         met_criteria = true;
     }
     if START_RULE.apply(public_address_no_0x) {
-        matched_rule = Some("Start word rule".to_string());
+        let word = START_RULE.matched_word(public_address_no_0x);
+        matched_rule = Some(format!("Start word rule. word {}", word));
         met_criteria = true;
     }
     VanityResult { 

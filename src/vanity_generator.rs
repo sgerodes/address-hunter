@@ -244,6 +244,8 @@ impl Rule for CharEntropyRule {
 }
 
 
+
+
 lazy_static! {
     pub static ref METAMASK_RULE: MetamaskStartEndRule = MetamaskStartEndRule::new();
     pub static ref CONSECUTIVE_CHARS_RULE: ContainsConsecutiveCharsCounterRule = ContainsConsecutiveCharsCounterRule::new(9);
@@ -267,7 +269,6 @@ pub fn does_address_meet_criteria(wallet: &Wallet) -> VanityResult {
         met_criteria = true;
     }
     if METAMASK_RULE.apply(public_address_no_0x) {
-        let consecutive_chars = max_consecutive_chars(public_address_no_0x);
         let first_char = public_address_no_0x.chars().nth(0).unwrap();
         let last_char = public_address_no_0x.chars().rev().nth(0).unwrap();
         matched_rule = Some(format!("Metamask rule {}{}", first_char, last_char));

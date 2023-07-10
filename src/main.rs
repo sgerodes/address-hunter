@@ -2,6 +2,7 @@
 #[warn(dead_code)]
 use std::time::Instant;
 use crate::vanity_generator::VanityResult;
+use rayon::prelude::*;
 
 mod address;
 mod vanity_generator;
@@ -14,7 +15,7 @@ fn main() {
     let mut loop_counter = 0;
     let mut total_adresses_searched = 0;
     let mut start = Instant::now();
-    let efficiency_count = 1_000_000;
+    let efficiency_count = 100_000;
 
     let mut wallet_creation_time: i64 = 0;
     let mut vanity_check_time: i64 = 0;
@@ -46,7 +47,7 @@ fn main() {
         }
         wallet_creation_time += after_wallet.duration_since(before_wallet).as_nanos() as i64;
         vanity_check_time += after_vanity.duration_since(after_wallet).as_nanos() as i64;
-        println!("wallet_creation_time / vanity_check_time:  {} ", wallet_creation_time / vanity_check_time);
+        println!("wallet_creation_time / vanity_check_time: {} ", wallet_creation_time as f64 / vanity_check_time as f64);
         wallet_creation_time = 0;
         vanity_check_time = 0;
 

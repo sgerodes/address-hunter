@@ -16,3 +16,5 @@ Cargo.lock
 playground/
 
 .env
+.vscode/
+.idea/

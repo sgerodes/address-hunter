@@ -243,6 +243,34 @@ impl Rule for CharEntropyRule {
     }
 }
 
+pub struct ZeroBytesRule{
+    zero_bytes_count: usize,
+}
+
+impl Rule for ZeroBytesRule {
+    fn apply(&self, public_address_no_0x: &String) -> bool {
+        self.count_zero_bytes(public_address_no_0x) >= self.zero_bytes_count
+    }
+}
+
+impl ZeroBytesRule {
+    pub fn new(zero_bytes_count: usize) -> Self {
+        Self {
+            zero_bytes_count
+        }
+    }
+    fn count_zero_bytes(&self, public_address_no_0x: &String) -> usize {
+        let bytes = public_address_no_0x.as_bytes();
+        let mut count = 0;
+        for i in (0..bytes.len()).step_by(2) {
+            if bytes[i] == b'0' && bytes[i + 1] == b'0' {
+                count += 1;
+            }
+        }
+        count
+    }
+}
+
 
 
 
@@ -251,6 +279,7 @@ lazy_static! {
     pub static ref CONSECUTIVE_CHARS_RULE: ContainsConsecutiveCharsCounterRule = ContainsConsecutiveCharsCounterRule::new(9);
     pub static ref START_RULE: StartRule<'static> = StartRule::new(&["decaff", "facade", "c0ffee", "dec0de", "01234567", "12345678", "abcdef", "fedcba", "98765432"]);
     pub static ref START_CONSECUTIVE_CHARS_RULE: StartsConsecutiveCharsCounterRule = StartsConsecutiveCharsCounterRule::new(7);
+    pub static ref ZERO_BYTES_RULE: ZeroBytesRule = ZeroBytesRule::new(4);
 }
 
 pub struct VanityResult {
@@ -263,23 +292,28 @@ pub fn does_address_meet_criteria(wallet: &Wallet) -> VanityResult {
     let public_address_no_0x = &wallet.address;
     let mut matched_rule: Option<String> = None;
     let mut met_criteria = false;
-    if START_CONSECUTIVE_CHARS_RULE.apply(public_address_no_0x) {
+    if ZERO_BYTES_RULE.apply(public_address_no_0x) {
+        let zero_bytes_count = ZERO_BYTES_RULE.count_zero_bytes(public_address_no_0x);
+        matched_rule = Some(format!("Zero Bytes Rule {}", zero_bytes_count));
+        met_criteria = true;
+    }
+    else if START_CONSECUTIVE_CHARS_RULE.apply(public_address_no_0x) {
         let consecutive_chars = max_consecutive_chars(public_address_no_0x);
         matched_rule = Some(format!("Start consecutive rule. Consecutive {}", consecutive_chars));
         met_criteria = true;
     }
-    if METAMASK_RULE.apply(public_address_no_0x) {
+    else if METAMASK_RULE.apply(public_address_no_0x) {
         let first_char = public_address_no_0x.chars().nth(0).unwrap();
         let last_char = public_address_no_0x.chars().rev().nth(0).unwrap();
         matched_rule = Some(format!("Metamask rule {}{}", first_char, last_char));
         met_criteria = true;
     }
-    if CONSECUTIVE_CHARS_RULE.apply(public_address_no_0x) { 
+    else if CONSECUTIVE_CHARS_RULE.apply(public_address_no_0x) { 
         let consecutive_chars = max_consecutive_chars(public_address_no_0x);
         matched_rule = Some(format!("Consecutive rule. Consecutive {}", consecutive_chars));
         met_criteria = true;
     }
-    if START_RULE.apply(public_address_no_0x) {
+    else if START_RULE.apply(public_address_no_0x) {
         let word = START_RULE.matched_word(public_address_no_0x);
         matched_rule = Some(format!("Start word rule. word {}", word));
         met_criteria = true;

@@ -279,7 +279,7 @@ lazy_static! {
     pub static ref CONSECUTIVE_CHARS_RULE: ContainsConsecutiveCharsCounterRule = ContainsConsecutiveCharsCounterRule::new(9);
     pub static ref START_RULE: StartRule<'static> = StartRule::new(&["decaff", "facade", "c0ffee", "dec0de", "01234567", "12345678", "abcdef", "fedcba", "98765432"]);
     pub static ref START_CONSECUTIVE_CHARS_RULE: StartsConsecutiveCharsCounterRule = StartsConsecutiveCharsCounterRule::new(7);
-    pub static ref ZERO_BYTES_RULE: ZeroBytesRule = ZeroBytesRule::new(4);
+    pub static ref ZERO_BYTES_RULE: ZeroBytesRule = ZeroBytesRule::new(5);
 }
 
 pub struct VanityResult {

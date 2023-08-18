@@ -3,12 +3,15 @@
 use std::time::Instant;
 use std::env;
 use crate::vanity_generator::VanityResult;
+use crate::address_utils::address_utils::calculate_proximity_coefficient;
+use crate::address_utils::address_utils::calculate_entropy;
 use rayon::prelude::*;
 use dotenv::dotenv;
 
 mod address;
 mod vanity_generator;
 mod database;
+mod address_utils;
 
 fn main() {
     dotenv().ok();
@@ -57,7 +60,7 @@ fn run_vanity(task_id: i32) {
             let vanity_result: VanityResult = vanity_generator::does_address_meet_criteria(&wallet);
             after_vanity = Instant::now();
             if vanity_result.met_criteria {
-                println!("Process {}: {} - {:?}", task_id, vanity_result.wallet.address, vanity_result.matched_rule);
+                println!("Process {}: {} - {:?} - Entropy {}, Proximity {}", task_id, vanity_result.wallet.address, vanity_result.matched_rule, &vanity_result.entropy_coefficient, &vanity_result.proximity_coefficient);
                 let insertion_result = database::database::write_eth_wallet(&vanity_result);
                 match insertion_result {
                     Ok(_) => {
@@ -80,5 +83,5 @@ fn run_vanity(task_id: i32) {
         println!("Process {}: Total searched {} addresses. Loops per second: {}", task_id, total_adresses_searched, efficiency_count as f64 / start.elapsed().as_secs_f64());
         loop_counter = 0;
         start = Instant::now();
-    }
+    }   
 }

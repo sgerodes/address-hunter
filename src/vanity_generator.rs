@@ -1,6 +1,9 @@
 use crate::address::eth_wallet::Wallet;
+use crate::address_utils::address_utils;
+
 use fancy_regex::Regex;
 use lazy_static::lazy_static;
+use std::collections::HashMap;
 
 
 pub trait Rule {
@@ -173,7 +176,6 @@ impl Rule for StartsConsecutiveCharsCounterRule {
 pub struct CharCounterRule {
 }
 
-use std::collections::HashMap;
 
 impl CharCounterRule {
     pub fn new() -> Self {
@@ -232,16 +234,46 @@ impl Rule for CharCounterRule {
     }
 }
 
+
+// entropy 
+
 pub struct CharEntropyRule {
+    entropy_coefficient_max_boundary: f64
 }
 
 impl Rule for CharEntropyRule {
-
     fn apply(&self, public_address_no_0x: &String) -> bool {
-
-        false
+        address_utils::calculate_entropy(public_address_no_0x) <= self.entropy_coefficient_max_boundary
     }
 }
+
+impl CharEntropyRule {
+    pub fn new(entropy_coefficient_max_boundary: f64) -> Self {
+        Self {entropy_coefficient_max_boundary}
+    }
+}
+
+// proximity coefficient
+
+
+pub struct ProximityCoefficientRule {
+    proximity_coefficient_min_boundary: f64,
+    proximity_max_distance: usize
+}
+
+impl Rule for ProximityCoefficientRule {
+    fn apply(&self, public_address_no_0x: &String) -> bool {
+        address_utils::calculate_proximity_coefficient(public_address_no_0x, self.proximity_max_distance) >= self.proximity_coefficient_min_boundary
+    }
+}
+
+impl ProximityCoefficientRule {
+    pub fn new(proximity_coefficient_min_boundary: f64, proximity_max_distance: usize) -> Self {
+        Self {proximity_coefficient_min_boundary, proximity_max_distance}
+    }
+}
+
+// zero bytes
 
 pub struct ZeroBytesRule{
     zero_bytes_count: usize,
@@ -280,12 +312,16 @@ lazy_static! {
     pub static ref START_RULE: StartRule<'static> = StartRule::new(&["decaff", "facade", "c0ffee", "dec0de", "01234567", "12345678", "abcdef", "fedcba", "98765432"]);
     pub static ref START_CONSECUTIVE_CHARS_RULE: StartsConsecutiveCharsCounterRule = StartsConsecutiveCharsCounterRule::new(7);
     pub static ref ZERO_BYTES_RULE: ZeroBytesRule = ZeroBytesRule::new(5);
+    pub static ref CHAR_ENTROPY_RULE: CharEntropyRule = CharEntropyRule::new(2.9);
+    pub static ref PROXIMITY_RULE: ProximityCoefficientRule = ProximityCoefficientRule::new(22.0, 3);
 }
 
 pub struct VanityResult {
     pub wallet: Wallet,
     pub matched_rule: Option<String>,
-    pub met_criteria: bool
+    pub met_criteria: bool,
+    pub entropy_coefficient: f64,
+    pub proximity_coefficient: f64
 }
 
 pub fn does_address_meet_criteria(wallet: &Wallet) -> VanityResult {
@@ -317,11 +353,27 @@ pub fn does_address_meet_criteria(wallet: &Wallet) -> VanityResult {
         let word = START_RULE.matched_word(public_address_no_0x);
         matched_rule = Some(format!("Start word rule. word {}", word));
         met_criteria = true;
-    }
+    } 
+    else if CHAR_ENTROPY_RULE.apply(public_address_no_0x) {
+        let word = START_RULE.matched_word(public_address_no_0x);
+        matched_rule = Some(format!("Entropy < {}", CHAR_ENTROPY_RULE.entropy_coefficient_max_boundary));
+        met_criteria = true;
+    } 
+    else if PROXIMITY_RULE.apply(public_address_no_0x) {
+        let word = START_RULE.matched_word(public_address_no_0x);
+        matched_rule = Some(format!("Proximity {} < {}", PROXIMITY_RULE.proximity_max_distance, PROXIMITY_RULE.proximity_coefficient_min_boundary));
+        met_criteria = true;
+    } 
+
+    let entropy_coefficient: f64 = address_utils::calculate_entropy(public_address_no_0x);
+    let proximity_coefficient: f64 = address_utils::calculate_proximity_coefficient(public_address_no_0x, PROXIMITY_RULE.proximity_max_distance);
+
     VanityResult { 
         wallet: wallet.clone(), 
         matched_rule, 
-        met_criteria 
+        met_criteria,
+        entropy_coefficient,
+        proximity_coefficient
     }
 }
 

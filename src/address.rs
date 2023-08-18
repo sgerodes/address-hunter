@@ -43,8 +43,6 @@ pub mod eth_wallet {
         eth_checksum::checksum(address)
     }
 
-   
-
 }
 
 pub mod eth_wallet_simple {

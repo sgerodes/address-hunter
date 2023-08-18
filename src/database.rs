@@ -15,8 +15,8 @@ pub mod database {
     pub fn write_eth_wallet(vanity_result: &VanityResult) -> Result<(), Error> {
         let mut client: Client = create_client()?;
         client.execute(
-            "INSERT INTO eth (public_address, private_key, info) VALUES ($1, $2, $3)",
-            &[&vanity_result.wallet.address, &vanity_result.wallet.secret_key, &vanity_result.matched_rule],
+            "INSERT INTO eth (public_address, private_key, info, entropy_coefficient, proximity_coefficient) VALUES ($1, $2, $3, $4, $5)",
+            &[&vanity_result.wallet.address, &vanity_result.wallet.secret_key, &vanity_result.matched_rule, &vanity_result.entropy_coefficient, &vanity_result.proximity_coefficient],
         )?;
         Ok(())
     }

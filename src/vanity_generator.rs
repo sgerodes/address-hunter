@@ -361,7 +361,7 @@ pub fn does_address_meet_criteria(wallet: &Wallet) -> VanityResult {
     } 
     else if PROXIMITY_RULE.apply(public_address_no_0x) {
         let word = START_RULE.matched_word(public_address_no_0x);
-        matched_rule = Some(format!("Proximity {} < {}", PROXIMITY_RULE.proximity_max_distance, PROXIMITY_RULE.proximity_coefficient_min_boundary));
+        matched_rule = Some(format!("Proximity {} > {}", PROXIMITY_RULE.proximity_max_distance, PROXIMITY_RULE.proximity_coefficient_min_boundary));
         met_criteria = true;
     } 
 

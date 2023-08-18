@@ -60,7 +60,7 @@ fn run_vanity(task_id: i32) {
             let vanity_result: VanityResult = vanity_generator::does_address_meet_criteria(&wallet);
             after_vanity = Instant::now();
             if vanity_result.met_criteria {
-                println!("Process {}: {} - {:?} - Entropy {}, Proximity {}", task_id, vanity_result.wallet.address, vanity_result.matched_rule, &vanity_result.entropy_coefficient, &vanity_result.proximity_coefficient);
+                println!("Process {}: {} - {:?} - Entropy {:.2}, Proximity {:.2}", task_id, vanity_result.wallet.address, vanity_result.matched_rule, &vanity_result.entropy_coefficient, &vanity_result.proximity_coefficient);
                 let insertion_result = database::database::write_eth_wallet(&vanity_result);
                 match insertion_result {
                     Ok(_) => {

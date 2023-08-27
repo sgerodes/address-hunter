@@ -365,7 +365,7 @@ pub fn does_address_meet_criteria(wallet: &Wallet) -> VanityResult {
         met_criteria = true;
     } 
     else if PROXIMITY_RULE.apply(address_no_prefix) {
-        matched_rule = Some(format!("Proximity {} < {}", PROXIMITY_RULE.proximity_max_distance, PROXIMITY_RULE.proximity_coefficient_min_boundary));
+        matched_rule = Some(format!("Proximity {} > {}", PROXIMITY_RULE.proximity_max_distance, PROXIMITY_RULE.proximity_coefficient_min_boundary));
         met_criteria = true;
     } 
     else if CHAR_ENTROPY_RULE_3.apply(address_checksummed) {
@@ -373,7 +373,7 @@ pub fn does_address_meet_criteria(wallet: &Wallet) -> VanityResult {
         met_criteria = true;
     } 
     else if PROXIMITY_RULE_3_21.apply(address_checksummed) {
-        matched_rule = Some(format!("Checksummed Proximity {} < {}", PROXIMITY_RULE_3_21.proximity_max_distance, PROXIMITY_RULE_3_21.proximity_coefficient_min_boundary));
+        matched_rule = Some(format!("Checksummed Proximity {} > {}", PROXIMITY_RULE_3_21.proximity_max_distance, PROXIMITY_RULE_3_21.proximity_coefficient_min_boundary));
         met_criteria = true;
     } 
 

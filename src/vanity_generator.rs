@@ -312,8 +312,8 @@ lazy_static! {
     pub static ref START_RULE: StartRule<'static> = StartRule::new(&["decaff", "facade", "c0ffee", "dec0de", "01234567", "12345678", "abcdef", "fedcba", "98765432"]);
     pub static ref START_CONSECUTIVE_CHARS_RULE: StartsConsecutiveCharsCounterRule = StartsConsecutiveCharsCounterRule::new(7);
     pub static ref ZERO_BYTES_RULE: ZeroBytesRule = ZeroBytesRule::new(5);
-    pub static ref CHAR_ENTROPY_RULE: CharEntropyRule = CharEntropyRule::new(2.9);
-    pub static ref PROXIMITY_RULE: ProximityCoefficientRule = ProximityCoefficientRule::new(22.0, 3);
+    pub static ref CHAR_ENTROPY_RULE: CharEntropyRule = CharEntropyRule::new(2.8);
+    pub static ref PROXIMITY_RULE: ProximityCoefficientRule = ProximityCoefficientRule::new(23.0, 3);
     pub static ref CHAR_ENTROPY_RULE_3: CharEntropyRule = CharEntropyRule::new(3.0);
     pub static ref PROXIMITY_RULE_3_21: ProximityCoefficientRule = ProximityCoefficientRule::new(21.0, 3);
 }

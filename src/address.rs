@@ -12,16 +12,20 @@ pub mod eth_wallet {
     pub struct Wallet {
         pub secret_key: String,
         pub public_key: String,
-        pub address: String
+        pub address: String,
+        pub address_checksummed: String
     }
 
     impl Wallet {
         pub fn new(secret_key: &SecretKey, public_key: &PublicKey) -> Self {
             let addr: Address = public_key_address(&public_key);
+            let address: String = hex::encode(addr);
+            let address_checksummed: String = checksummed(&address);
             Wallet {
                 secret_key: hex::encode(&secret_key.secret_bytes()),
                 public_key: public_key.to_string(),
-                address: hex::encode(addr),
+                address: address,
+                address_checksummed: address_checksummed
             }
         }
     }
@@ -353,9 +357,6 @@ mod tests {
             println!("{} in {:.2} seconds, {:.2} wallets/second", name, duration_in_secs, wallets_per_second);
         }
 
-        let address = Address::from_str("0xabcdef6789012345678901234567890123abcdef").unwrap();
-        println!("{}", address.to_string());
-        println!("{}", eth_checksum::checksum("0xde00050c5ecba5e32e1d0b57e1f6669184f4fc15"));
     }
 
 }

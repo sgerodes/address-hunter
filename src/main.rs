@@ -64,7 +64,7 @@ fn run_vanity(task_id: i32) {
                 let insertion_result = database::database::write_eth_wallet(&vanity_result);
                 match insertion_result {
                     Ok(_) => {
-                        println!("Process {}: Wrote to DB {}", task_id, vanity_result.wallet.address);
+                        println!("Process {}: Wrote to DB {}", task_id, vanity_result.wallet.address_checksummed);
                     },
                     Err(e) => {
                         println!("Process {}: Error writing to DB: {}", task_id, e);

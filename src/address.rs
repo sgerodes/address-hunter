@@ -44,7 +44,7 @@ pub mod eth_wallet {
     }
 
     pub fn checksummed(address: &String) -> String {
-        eth_checksum::checksum(address)
+        eth_checksum::checksum(address)[2..].to_string()
     }
 
 }

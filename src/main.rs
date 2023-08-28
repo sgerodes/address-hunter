@@ -83,5 +83,5 @@ fn run_vanity(task_id: i32) {
         println!("Process {}: Total searched {} addresses. Loops per second: {}", task_id, total_adresses_searched, efficiency_count as f64 / start.elapsed().as_secs_f64());
         loop_counter = 0;
         start = Instant::now();
-    }   
+    }
 }

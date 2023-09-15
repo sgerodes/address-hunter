@@ -12,6 +12,8 @@ mod address;
 mod vanity_generator;
 mod database;
 mod address_utils;
+mod percentile_heap;
+
 
 fn main() {
     dotenv().ok();
@@ -62,6 +64,7 @@ fn run_vanity(task_id: i32) {
             if vanity_result.met_criteria {
                 println!("Process {}: {} - {:?} - Entropy {:.2}, Proximity {:.2}, CS Entropy {:.2}, CS Proximity {:.2}", task_id, vanity_result.wallet.address_checksummed, vanity_result.matched_rule, &vanity_result.entropy_coefficient, &vanity_result.proximity_coefficient, &vanity_result.entropy_coefficient_checksummed, &vanity_result.proximity_coefficient_checksummed);
                 let insertion_result = database::database::write_eth_wallet(&vanity_result);
+                //let insertion_result = Ok(); // TODO change
                 match insertion_result {
                     Ok(_) => {
                         println!("Process {}: Wrote to DB {}", task_id, vanity_result.wallet.address_checksummed);

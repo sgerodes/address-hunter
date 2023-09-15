@@ -4,6 +4,7 @@ use crate::address_utils::address_utils;
 use fancy_regex::Regex;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
+use std::cmp::{Ord, PartialOrd, Ordering};
 
 
 pub trait Rule {
@@ -252,6 +253,7 @@ impl CharEntropyRule {
         Self {entropy_coefficient_max_boundary}
     }
 }
+
 
 // proximity coefficient
 

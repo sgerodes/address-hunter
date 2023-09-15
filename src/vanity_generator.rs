@@ -5,7 +5,7 @@ use fancy_regex::Regex;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::cmp::{Ord, PartialOrd, Ordering};
-
+use std::fmt;
 
 pub trait Rule {
     fn apply(&self, address_no_prefix: &String) -> bool;
@@ -328,6 +328,26 @@ pub struct VanityResult {
     pub proximity_coefficient: f64,
     pub entropy_coefficient_checksummed: f64,
     pub proximity_coefficient_checksummed: f64
+}
+
+impl fmt::Display for VanityResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "VanityResult {{
+    Matched Rule: {:?},
+    Entropy Coefficient: {:.2},
+    Proximity Coefficient: {:.2},
+    Entropy Coefficient (Checksummed): {:.2},
+    Proximity Coefficient (Checksummed): {:.2}
+}}",
+            self.matched_rule,
+            self.entropy_coefficient,
+            self.proximity_coefficient,
+            self.entropy_coefficient_checksummed,
+            self.proximity_coefficient_checksummed
+        )
+    }
 }
 
 pub fn does_address_meet_criteria(wallet: &Wallet) -> VanityResult {

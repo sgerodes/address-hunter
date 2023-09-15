@@ -1,11 +1,10 @@
 use std::collections::BinaryHeap;
 use ordered_float::OrderedFloat;
-use std::cmp::Reverse;
 use std::fmt;
-use std::collections::HashSet;
+use std::cmp::Reverse;
 
 
-const DEFAULT_HEAP_CAPACITY: usize = 2_usize.pow(5); // probably change to 2**16
+const DEFAULT_HEAP_CAPACITY: usize = 2_usize.pow(5); // probably change to 2^16
 
 pub struct PercentileHeap {
     percentile: f64,
@@ -90,24 +89,6 @@ mod tests {
     use super::PercentileHeap;
 
     #[test]
-    fn test_insert_and_boundary() {
-        let range = (0..15);
-        let percentile: f64 = 0.17;
-
-        let mut pheap = PercentileHeap::new(percentile);
-        for i in range.rev() {
-            pheap.insert(i as f64);
-            println!("values_processed {}, next_expansion {}, is_at_threshold_for_expansion {}, heap {}", pheap.values_processed, pheap.smallest_values_processed_for_next_expansion(), pheap.is_at_threshold_for_expansion(), pheap.get_heap_str());
-        }
-
-        println!("{}", pheap);
-        // assert_eq!(pheap.len(), 4);
-
-        //assert_eq!(pheap.get_boundary(), 19.0);
-
-    }
-
-    #[test]
     fn test_expansion() {
         test_expansion_helper(0..14, 0.25, HashSet::from([4, 8, 12, 16]));
         test_expansion_helper(0..32, 0.1, HashSet::from([10, 20, 30, 40]));
@@ -118,13 +99,10 @@ mod tests {
         let mut pheap = PercentileHeap::new(percentile);
         for value in range.rev() {
             pheap.insert(value as f64);
-
-            // Your existing test logic
+            assert!(should_expand_at.contains(&pheap.smallest_values_processed_for_next_expansion()));
             if should_expand_at.contains(&(pheap.values_processed + 1)) {
                 assert!(pheap.is_at_threshold_for_expansion());
             }
-            assert!(should_expand_at.contains(&pheap.smallest_values_processed_for_next_expansion()));
-
             if pheap.is_at_threshold_for_expansion() {
                 assert_eq!(&(pheap.values_processed + 1), &pheap.smallest_values_processed_for_next_expansion());
             }

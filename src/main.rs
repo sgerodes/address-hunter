@@ -18,6 +18,7 @@ mod percentile_heap;
 fn main() {
     dotenv().ok();
 
+
     let process_count = env::var("PROCESS_COUNT")
     .unwrap_or_else(|_| "1".to_string())
     .parse()
@@ -34,7 +35,18 @@ fn main() {
 
 
 fn run_vanity(task_id: i32) {
+
     println!("Process {}: Vanity Generaor started!", task_id);
+
+    let environment = std::env::var("ENVIRONMENT").unwrap_or_else(|_| "localdev".to_string());
+    let db: Box<dyn database::database::DatabaseHandler> = if environment == "prod" {
+        println!("Using prod database");
+        Box::new(database::database::RealDatabase)
+    } else {
+        println!("Using mock database");
+        Box::new(database::database::MockDatabase)
+    };
+
     let mut loop_counter = 0;
     let mut total_adresses_searched = 0;
     let mut start = Instant::now();
@@ -63,9 +75,7 @@ fn run_vanity(task_id: i32) {
             after_vanity = Instant::now();
             if vanity_result.met_criteria {
                 println!("Process {}: {} - {:?} - Entropy {:.2}, Proximity {:.2}, CS Entropy {:.2}, CS Proximity {:.2}", task_id, vanity_result.wallet.address_checksummed, vanity_result.matched_rule, &vanity_result.entropy_coefficient, &vanity_result.proximity_coefficient, &vanity_result.entropy_coefficient_checksummed, &vanity_result.proximity_coefficient_checksummed);
-                let insertion_result = database::database::write_eth_wallet(&vanity_result);
-                //let insertion_result = Ok(); // TODO change
-                match insertion_result {
+                match db.write_eth_wallet(&vanity_result) {
                     Ok(_) => {
                         println!("Process {}: Wrote to DB {}", task_id, vanity_result.wallet.address_checksummed);
                     },

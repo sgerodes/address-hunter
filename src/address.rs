@@ -49,6 +49,36 @@ pub mod eth_wallet {
 
 }
 
+pub mod polka_wallet {
+    use sp_core::crypto::Ss58Codec;
+    use sp_core::{sr25519, Pair};
+
+    #[derive(Debug, Clone)]
+    pub struct PolkaWallet {
+        pub secret_key: String,
+        pub public_key: String,
+        pub address: String,
+    }
+
+    impl PolkaWallet {
+        pub fn new(secret_key: &sr25519::Pair) -> Self {
+            let public_key = secret_key.public();
+            let address = public_key.to_ss58check();
+            PolkaWallet {
+                secret_key: hex::encode(secret_key.to_raw_vec()),
+                public_key: hex::encode(public_key),
+                address: address,
+            }
+        }
+    }
+
+    pub fn generate_random_wallet() -> PolkaWallet {
+        let pair = sr25519::Pair::generate();
+        PolkaWallet::new(&pair.0)
+    }
+}
+
+
 pub mod eth_wallet_simple {
     // https://ethereum.stackexchange.com/questions/3542/how-are-ethereum-addresses-generated
     
@@ -300,7 +330,9 @@ mod tests {
     use super::eth_wallet_simple;
     use super::eth_wallet_simple_u64;
     use super::eth_wallet_u64_contained;
+    use super::polka_wallet;
     use std::time::Instant;
+    use eth_checksum;
 
     fn g_wallet(n_wallets: i32) {
         for _ in 0..n_wallets {
@@ -324,14 +356,17 @@ mod tests {
         }
     }
 
-    fn s_64_reduced(n_wallets: i32) { 
+    fn s_64_reduced(n_wallets: i32) {
         for _ in 0..n_wallets {
             let _wallet = eth_wallet_u64_contained::generate_ecdsa_key_pair_from_private_key().unwrap();
         }
     }
-    use web3::types::Address;
-    use std::str::FromStr;
-    use eth_checksum;
+
+    fn polka_wallet(n_wallets: i32) {
+        for _ in 0..n_wallets {
+            let _wallet = polka_wallet::generate_random_wallet();
+        }
+    }
 
     #[test]
     fn wallet_generation_speed() {
@@ -341,7 +376,8 @@ mod tests {
                 ("g_wallet", g_wallet as fn(i32)), 
                 ("s_wallet", s_wallet as fn(i32)), 
                 ("s_64_wallet", s_64_wallet as fn(i32)),
-                ("s_64_reduced", s_64_reduced as fn(i32))
+                ("s_64_reduced", s_64_reduced as fn(i32)),
+                ("polka_wallet", polka_wallet as fn(i32))
             ];
 
         println!("Generating {} wallets for every function", n_wallets);

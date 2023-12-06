@@ -52,7 +52,7 @@ pub mod eth_wallet {
 pub mod polka_wallet {
     use sp_core::{sr25519, Pair};
     use sp_core::crypto::{Ss58Codec};
-    use bip39::{Mnemonic, Language};
+    use bip39::{Mnemonic, Language, Seed};
     use rand::RngCore;
 
     #[derive(Debug, Clone)]
@@ -76,19 +76,21 @@ pub mod polka_wallet {
     }
 
     pub fn generate_random_wallet() -> PolkaWallet {
-        let mut entropy = [0u8; 16]; // 128 bits for 12-word mnemonic
+        let mut entropy = [0u8; 16];
         rand::thread_rng().fill_bytes(&mut entropy);
+        // mnemonic is not working
+        let mnemonic = Mnemonic::from_entropy(&entropy, Language::English).unwrap();
+        let seed = Seed::new(&mnemonic, std::env::var("POLKADOT_PASSWORD").unwrap().as_str());
+        let pair = sr25519::Pair::from_seed_slice(&seed.as_bytes()[0..32]).expect("Invalid Seed");
 
-        let mnemonic = Mnemonic::from_entropy(&entropy).unwrap();
-        // Convert mnemonic to seed
-        let normalized_passphrase = ""; // Using an empty passphrase
-        let seed = mnemonic.to_seed_normalized(normalized_passphrase);
-
-        // Generate key pair from seed slice
-        let pair = sr25519::Pair::from_seed_slice(&seed).unwrap();
-
-        // Create and return the wallet
-        PolkaWallet::new(&pair, mnemonic.phrase())
+        let public_key = pair.public();
+        let address = public_key.to_ss58check();
+        PolkaWallet {
+            secret_key: hex::encode(pair.to_raw_vec()),
+            public_key: hex::encode(public_key),
+            address,
+            mnemonic: mnemonic.phrase().to_string(),
+        }
     }
 }
 

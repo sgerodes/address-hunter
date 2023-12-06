@@ -435,11 +435,13 @@ impl fmt::Display for PolkadotVanityResult {
             "PolkadotVanityResult {{
     Matched Rule: {:?},
     Entropy Coefficient: {:.2},
-    Proximity Coefficient: {:.2}
+    Proximity Coefficient: {:.2},
+    mnemonic: {}
 }}",
             self.matched_rule,
             self.entropy_coefficient,
-            self.proximity_coefficient
+            self.proximity_coefficient,
+            self.wallet.mnemonic
         )
     }
 }

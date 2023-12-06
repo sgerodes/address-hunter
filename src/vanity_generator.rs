@@ -381,11 +381,11 @@ lazy_static! {
 
 lazy_static! {
     pub static ref POLKADOT_POLKADOT_JS: PolkadotJsStartEndRule = PolkadotJsStartEndRule::new();
-    pub static ref POLKADOT_CONSECUTIVE_CHARS_RULE: ContainsConsecutiveCharsCounterRule = ContainsConsecutiveCharsCounterRule::new(5);
+    pub static ref POLKADOT_CONSECUTIVE_CHARS_RULE: ContainsConsecutiveCharsCounterRule = ContainsConsecutiveCharsCounterRule::new(6);
     pub static ref POLKADOT_START_RULE: StartRule<'static> = StartRule::new(&["012345", "123456", "abcdef", "dev", "crypto", "web3", "coin", "chain", "wallet", "star", "galaxy", "zen", "future", "byte", "quantum"], false);
     pub static ref POLKADOT_START_CONSECUTIVE_CHARS_RULE: StartsConsecutiveCharsCounterRule = StartsConsecutiveCharsCounterRule::new(4);
-    pub static ref POLKADOT_CHAR_ENTROPY_RULE: CharEntropyRule = CharEntropyRule::new(2.8);
-    pub static ref POLKADOT_PROXIMITY_RULE: ProximityCoefficientRule = ProximityCoefficientRule::new(23.0, 3);
+    pub static ref POLKADOT_CHAR_ENTROPY_RULE: CharEntropyRule = CharEntropyRule::new(4.2);
+    pub static ref POLKADOT_PROXIMITY_RULE: ProximityCoefficientRule = ProximityCoefficientRule::new(11.8, 3);
 }
 
 
@@ -475,11 +475,11 @@ pub fn does_polkadot_address_meet_criteria(wallet: &PolkaWallet) -> PolkadotVani
         met_criteria = true;
     } 
     else if POLKADOT_CHAR_ENTROPY_RULE.apply(address_no_prefix) {
-        matched_rule = Some(format!("Entropy < {}", CHAR_ENTROPY_RULE.entropy_coefficient_max_boundary));
+        matched_rule = Some(format!("Entropy < {}", POLKADOT_CHAR_ENTROPY_RULE.entropy_coefficient_max_boundary));
         met_criteria = true;
     } 
     else if POLKADOT_PROXIMITY_RULE.apply(address_no_prefix) {
-        matched_rule = Some(format!("Proximity {} > {}", PROXIMITY_RULE.proximity_max_distance, PROXIMITY_RULE.proximity_coefficient_min_boundary));
+        matched_rule = Some(format!("Proximity {} > {}", POLKADOT_PROXIMITY_RULE.proximity_max_distance, POLKADOT_PROXIMITY_RULE.proximity_coefficient_min_boundary));
         met_criteria = true;
     }
 
